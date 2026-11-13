@@ -1,7 +1,30 @@
-{% extends "base.html" %}{% block title %}Catalogue | Smart Library{% endblock %}
+{% extends "base.html" %}{% block title %}Explore the catalogue | Smart Library{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4"><div><h2 class="fw-bold mb-1">Library catalogue</h2><div class="muted">Discover books and learning resources in your library.</div></div>{% if current_user.role in ['owner','admin','librarian'] %}<a href="{{ url_for('new_book') }}" class="btn btn-brand"><i class="bi bi-plus-lg me-2"></i>Add resource</a>{% endif %}</div>
-<form class="surface p-3 mb-3" method="get"><div class="input-group"><span class="input-group-text bg-white"><i class="bi bi-search"></i></span><input class="form-control border-start-0" name="q" value="{{ q }}" placeholder="Search by title, author, ISBN or category"><button class="btn btn-brand">Search</button></div></form>
-<div class="surface p-3"><div class="d-flex justify-content-between align-items-center mb-2"><span class="fw-semibold">{{ books|length }} resources</span><span class="small muted">Catalogue results</span></div>
-{% if books %}<div class="table-responsive"><table class="table mb-0"><thead><tr><th>Title / Author</th><th>Category</th><th>ISBN</th><th>Availability</th><th></th></tr></thead><tbody>{% for book in books %}<tr><td><div class="fw-semibold">{{ book.title }}</div><div class="small muted">{{ book.author }}{% if book.publication_year %} · {{ book.publication_year }}{% endif %}</div></td><td>{{ book.category }}</td><td>{{ book.isbn or '—' }}</td><td><span class="badge {% if book.available_copies %}text-bg-success{% else %}text-bg-warning{% endif %}">{{ book.available_copies }} / {{ book.total_copies }} available</span></td><td>{% if current_user.role == 'member' and not book.available_copies %}<form method="post" action="{{ url_for('reserve_book',book_id=book.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-success">Reserve</button></form>{% endif %}</td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="text-center py-5 muted"><i class="bi bi-search fs-1 d-block mb-2"></i>No matching resources found.</div>{% endif %}
-</div>{% endblock %}
+<section class="py-5" style="background:#edf5f1">
+  <div class="container py-3">
+    <div class="small text-success fw-bold text-uppercase mb-2">Open library catalogue</div>
+    <h1 class="fw-bold display-5 mb-2">Discover your next great read.</h1>
+    <p class="muted mb-4">Explore books and learning resources listed by libraries on Smart Library.</p>
+    <form class="surface p-2" method="get"><div class="input-group input-group-lg"><span class="input-group-text bg-white border-0"><i class="bi bi-search text-success"></i></span><input class="form-control border-0" name="q" value="{{ q }}" placeholder="Search title, author, ISBN, subject or library"><button class="btn btn-brand px-4">Search</button></div></form>
+  </div>
+</section>
+<div class="container py-5">
+  <div class="d-flex justify-content-between align-items-center mb-3"><h4 class="fw-bold mb-0">Available catalogue records</h4><span class="small muted">{{ books|length }} results</span></div>
+  {% if books %}
+  <div class="row g-3">
+    {% for book in books %}
+    <div class="col-md-6 col-xl-4"><article class="feature-card">
+      <div class="d-flex justify-content-between align-items-start mb-3"><span class="badge text-bg-light text-success">{{ book.category }}</span><i class="bi bi-book fs-4 text-success"></i></div>
+      <h5 class="fw-bold mb-1">{{ book.title }}</h5><div class="muted mb-3">by {{ book.author }}</div>
+      <div class="small muted mb-1"><i class="bi bi-building me-2"></i>{{ book.institution.name }}</div>
+      {% if book.publisher %}<div class="small muted mb-1"><i class="bi bi-journal-text me-2"></i>{{ book.publisher }}</div>{% endif %}
+      {% if book.isbn %}<div class="small muted mb-3">ISBN: {{ book.isbn }}</div>{% endif %}
+      <div class="d-flex justify-content-between align-items-center pt-3 border-top"><span class="small {% if book.available_copies > 0 %}text-success{% else %}text-secondary{% endif %}">{{ book.available_copies }} of {{ book.total_copies }} available</span>{% if current_user.is_authenticated %}<a class="small fw-semibold text-success text-decoration-none" href="{{ url_for('loans') }}">My loans</a>{% else %}<a class="small fw-semibold text-success text-decoration-none" href="{{ url_for('login') }}">Sign in to borrow</a>{% endif %}</div>
+    </article></div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="surface text-center py-5"><i class="bi bi-journal-bookmark fs-1 text-success"></i><h5 class="fw-bold mt-3">No catalogue records yet</h5><p class="muted mb-3">Be among the first to bring a library online.</p><a href="{{ url_for('register') }}" class="btn btn-brand">Register your library</a></div>
+  {% endif %}
+</div>
+{% endblock %}
