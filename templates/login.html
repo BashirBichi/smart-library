@@ -1,0 +1,18 @@
+{% extends "base.html" %}{% block title %}Sign in | Smart Library{% endblock %}
+{% block content %}
+<div class="row justify-content-center align-items-center" style="min-height:75vh">
+<div class="col-lg-5 col-md-7">
+  <div class="surface p-4 p-md-5">
+    <div class="text-center mb-4"><div class="display-6 text-success"><i class="bi bi-book-half"></i></div><h2 class="fw-bold mt-2">Smart Library</h2><p class="muted">Your library. Available everywhere.</p></div>
+    <h5 class="fw-bold mb-1">Welcome back</h5><p class="muted small mb-4">Sign in to access your library workspace.</p>
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="form-label fw-semibold">Email address</label><input class="form-control form-control-lg mb-3" type="email" name="email" autocomplete="username" required>
+      <label class="form-label fw-semibold">Password</label><input class="form-control form-control-lg mb-3" type="password" name="password" autocomplete="current-password" required>
+      {% if institutions|length > 1 %}<label class="form-label fw-semibold">Library</label><select class="form-select mb-3" name="institution_id" required><option value="">Choose your library</option>{% for i in institutions %}<option value="{{ i.id }}">{{ i.name }}</option>{% endfor %}</select>{% endif %}
+      <div class="form-check mb-4"><input class="form-check-input" type="checkbox" name="remember" id="remember"><label class="form-check-label" for="remember">Keep me signed in</label></div>
+      <button class="btn btn-brand btn-lg w-100">Sign in <i class="bi bi-arrow-right ms-1"></i></button>
+    </form>
+  </div><p class="text-center small muted mt-3">A smarter way to manage knowledge and resources.</p>
+</div></div>
+{% endblock %}
