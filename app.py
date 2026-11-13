@@ -176,12 +176,18 @@ def create_app() -> Flask:
             email = request.form.get("email", "").strip().lower()
             password = request.form.get("password", "")
             confirm_password = request.form.get("confirm_password", "")
-            if len(institution_name) < 2 or len(full_name) < 2 or "@" not in email:
-                flash("Enter a valid library name, full name and email address.", "danger")
+            if not (2 <= len(institution_name) <= 160):
+                flash("Library name must contain between 2 and 160 characters.", "danger")
+            elif not (2 <= len(full_name) <= 140):
+                flash("Enter your full name (2 to 140 characters).", "danger")
+            elif len(email) > 254 or "@" not in email or email.startswith("@") or email.endswith("@"):
+                flash("Enter a valid email address.", "danger")
             elif len(password) < 12:
-                flash("Use a password with at least 12 characters.", "danger")
+                flash("Account not created: password must contain at least 12 characters.", "danger")
+            elif len(password) > 256:
+                flash("Password is too long. Use no more than 256 characters.", "danger")
             elif password != confirm_password:
-                flash("The passwords do not match.", "danger")
+                flash("Account not created: the passwords do not match.", "danger")
             else:
                 institution = Institution(name=institution_name)
                 db.session.add(institution)
@@ -200,8 +206,9 @@ def create_app() -> Flask:
                     flash("Your library workspace has been created.", "success")
                     return redirect(url_for("dashboard"))
                 except Exception:
+                    app.logger.exception("Smart Library registration failed for email=%s", email)
                     db.session.rollback()
-                    flash("Registration could not be completed. Check the details and try again.", "danger")
+                    flash("We could not create your account because the database rejected the registration. Please retry once. If it happens again, contact support with the time of the attempt.", "danger")
         return render_template("register.html")
 
     @app.route("/login", methods=["GET", "POST"])
