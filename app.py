@@ -161,7 +161,47 @@ def create_app() -> Flask:
     def index() -> Any:
         if current_user.is_authenticated:
             return redirect(url_for("dashboard"))
-        return redirect(url_for("login"))
+        total_books = db.session.scalar(select(func.count(Book.id))) or 0
+        total_libraries = db.session.scalar(select(func.count(Institution.id))) or 0
+        return render_template("landing.html", total_books=total_books, total_libraries=total_libraries)
+
+    @app.route("/register", methods=["GET", "POST"])
+    def register() -> Any:
+        if current_user.is_authenticated:
+            return redirect(url_for("dashboard"))
+        if request.method == "POST":
+            institution_name = request.form.get("institution_name", "").strip()
+            full_name = request.form.get("full_name", "").strip()
+            email = request.form.get("email", "").strip().lower()
+            password = request.form.get("password", "")
+            confirm_password = request.form.get("confirm_password", "")
+            if len(institution_name) < 2 or len(full_name) < 2 or "@" not in email:
+                flash("Enter a valid library name, full name and email address.", "danger")
+            elif len(password) < 12:
+                flash("Use a password with at least 12 characters.", "danger")
+            elif password != confirm_password:
+                flash("The passwords do not match.", "danger")
+            else:
+                institution = Institution(name=institution_name)
+                db.session.add(institution)
+                try:
+                    db.session.flush()
+                    owner = User(
+                        institution_id=institution.id,
+                        full_name=full_name,
+                        email=email,
+                        role="owner",
+                    )
+                    owner.set_password(password)
+                    db.session.add(owner)
+                    db.session.commit()
+                    login_user(owner)
+                    flash("Your library workspace has been created.", "success")
+                    return redirect(url_for("dashboard"))
+                except Exception:
+                    db.session.rollback()
+                    flash("Registration could not be completed. Check the details and try again.", "danger")
+        return render_template("register.html")
 
     @app.route("/login", methods=["GET", "POST"])
     def login() -> Any:
@@ -206,16 +246,16 @@ def create_app() -> Flask:
                                active_loans=active_loans, overdue=overdue, recent=recent)
 
     @app.get("/catalog")
-    @login_required
     def catalog() -> Any:
-        term = request.args.get("q", "").strip()
-        query = select(Book).where(Book.institution_id == current_user.institution_id)
+        term = request.args.get("q", "").strip()[:120]
+        query = select(Book).join(Institution, Book.institution_id == Institution.id)
         if term:
             pattern = f"%{term}%"
             query = query.where(or_(Book.title.ilike(pattern), Book.author.ilike(pattern),
-                                    Book.isbn.ilike(pattern), Book.category.ilike(pattern)))
+                                    Book.isbn.ilike(pattern), Book.category.ilike(pattern),
+                                    Institution.name.ilike(pattern)))
         books = db.session.scalars(query.order_by(Book.title).limit(250)).all()
-        return render_template("catalog.html", books=books, q=term)
+        return render_template("catalog.html", books=books, q=term, public_view=not current_user.is_authenticated)
 
     @app.route("/books/new", methods=["GET", "POST"])
     @staff_required
