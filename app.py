@@ -239,7 +239,8 @@ def create_app() -> Flask:
     @login_required
     def logout() -> Any:
         logout_user()
-        return redirect(url_for("login"))
+        flash("You have been signed out successfully.", "success")
+        return redirect(url_for("index"))
 
     @app.get("/dashboard")
     @login_required
