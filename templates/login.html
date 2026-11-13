@@ -3,7 +3,7 @@
 <div class="row justify-content-center align-items-center" style="min-height:75vh">
 <div class="col-lg-5 col-md-7">
   <div class="surface p-4 p-md-5">
-    <div class="text-center mb-4"><div class="display-6 text-success"><i class="bi bi-book-half"></i></div><h2 class="fw-bold mt-2">Smart Library</h2><p class="muted">Your library. Available everywhere.</p></div>
+    <div class="text-center mb-4"><a href="{{ url_for('index') }}" class="text-decoration-none text-success"><div class="display-6"><i class="bi bi-book-half"></i></div></a><h2 class="fw-bold mt-2">Smart Library</h2><p class="muted">Your library. Available everywhere.</p></div>
     <h5 class="fw-bold mb-1">Welcome back</h5><p class="muted small mb-4">Sign in to access your library workspace.</p>
     <form method="post">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -13,6 +13,7 @@
       <div class="form-check mb-4"><input class="form-check-input" type="checkbox" name="remember" id="remember"><label class="form-check-label" for="remember">Keep me signed in</label></div>
       <button class="btn btn-brand btn-lg w-100">Sign in <i class="bi bi-arrow-right ms-1"></i></button>
     </form>
+    <div class="text-center mt-4 small">New to Smart Library? <a class="text-success fw-semibold" href="{{ url_for('register') }}">Create a library account</a></div>
   </div><p class="text-center small muted mt-3">A smarter way to manage knowledge and resources.</p>
 </div></div>
 {% endblock %}
