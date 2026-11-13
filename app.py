@@ -367,7 +367,9 @@ def create_app() -> Flask:
     def not_found(_: Any) -> Any:
         return render_template("error.html", code=404, message="The requested resource was not found."), 404
 
-    with app.app_context():
+    @app.cli.command("init-db")
+    def init_db() -> None:
+        """Create the initial schema and optional bootstrap owner in a single process."""
         db.create_all()
         bootstrap_email = os.environ.get("BOOTSTRAP_ADMIN_EMAIL", "").strip().lower()
         bootstrap_password = os.environ.get("BOOTSTRAP_ADMIN_PASSWORD", "")
@@ -386,6 +388,8 @@ def create_app() -> Flask:
                 admin.set_password(bootstrap_password)
                 db.session.add(admin)
                 db.session.commit()
+        db.session.remove()
+
     return app
 
 
