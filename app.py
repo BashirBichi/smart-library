@@ -81,6 +81,7 @@ def create_app() -> Flask:
         total_copies = db.Column(db.Integer, nullable=False, default=1)
         available_copies = db.Column(db.Integer, nullable=False, default=1)
         resource_type = db.Column(db.String(20), nullable=False, default="physical")
+        institution = db.relationship("Institution")
         created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
         __table_args__ = (UniqueConstraint("institution_id", "isbn", name="uq_book_institution_isbn"),)
 
