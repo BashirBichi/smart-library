@@ -178,7 +178,11 @@ def create_app() -> Flask:
             user = users[0] if len(users) == 1 else None
             if user and user.check_password(password):
                 login_user(user, remember=request.form.get("remember") == "on")
-                return redirect(request.args.get("next") or url_for("dashboard"))
+                next_url = request.args.get("next", "")
+                parsed_next = urlparse(next_url)
+                if parsed_next.scheme or parsed_next.netloc or not next_url.startswith("/"):
+                    next_url = url_for("dashboard")
+                return redirect(next_url)
             flash("Invalid credentials. Check your email and password.", "danger")
         institutions = db.session.scalars(select(Institution).order_by(Institution.name)).all()
         return render_template("login.html", institutions=institutions)
@@ -232,7 +236,8 @@ def create_app() -> Flask:
                     shelf_location=request.form.get("shelf_location", "").strip() or None,
                     description=request.form.get("description", "").strip() or None,
                     total_copies=copies, available_copies=copies,
-                    resource_type=request.form.get("resource_type", "physical"),
+                    resource_type=request.form.get("resource_type", "physical")
+                    if request.form.get("resource_type") in {"physical", "digital", "reference"} else "physical",
                 )
                 db.session.add(book)
                 try:
@@ -272,7 +277,9 @@ def create_app() -> Flask:
             email = request.form.get("email", "").strip().lower()
             password = request.form.get("password", "")
             role = request.form.get("role", "member")
-            if not name or "@" not in email or len(password) < 12 or role not in {"member", "librarian", "admin"}:
+            if current_user.role == "librarian" and role != "member":
+                flash("Librarians can create member accounts only.", "danger")
+            elif not name or "@" not in email or len(password) < 12 or role not in {"member", "librarian", "admin"}:
                 flash("Provide valid details. Passwords must be at least 12 characters.", "danger")
             else:
                 user = User(institution_id=current_user.institution_id, full_name=name, email=email, role=role)
@@ -297,11 +304,20 @@ def create_app() -> Flask:
         if current_user.role == "member":
             query = query.where(Loan.member_id == current_user.id)
         records = db.session.scalars(query.order_by(Loan.issued_at.desc()).limit(300)).all()
-        reservations = db.session.scalars(select(Reservation).where(
+        reservation_query = select(Reservation).where(
             Reservation.institution_id == current_user.institution_id,
-            Reservation.member_id == current_user.id if current_user.role == "member" else True,
-            Reservation.status == "pending").order_by(Reservation.created_at.desc()).limit(100)).all()
-        return render_template("loans.html", loans=records, reservations=reservations)
+            Reservation.status == "pending",
+        )
+        if current_user.role == "member":
+            reservation_query = reservation_query.where(Reservation.member_id == current_user.id)
+        reservations = db.session.scalars(
+            reservation_query.order_by(Reservation.created_at.desc()).limit(100)
+        ).all()
+        issue_books = db.session.scalars(select(Book).where(
+            Book.institution_id == current_user.institution_id,
+            Book.available_copies > 0,
+        ).order_by(Book.title).limit(500)).all() if current_user.role in {"owner", "admin", "librarian"} else []
+        return render_template("loans.html", loans=records, reservations=reservations, issue_books=issue_books)
 
     @app.post("/loans/issue")
     @staff_required
