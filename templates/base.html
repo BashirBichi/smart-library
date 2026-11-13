@@ -17,7 +17,14 @@
     .metric{font-size:2rem;font-weight:800;letter-spacing:-1px}
     .muted{color:var(--muted)}.btn-brand{background:var(--brand);color:#fff}.btn-brand:hover{background:#105642;color:#fff}
     .table>:not(caption)>*>*{padding:14px 12px;vertical-align:middle}
-    @media(max-width:850px){.sidebar{position:static;width:auto;min-height:0;padding:14px}.sidebar .nav{display:flex;overflow:auto;white-space:nowrap}.main{margin:0;padding:18px}.brand{margin-bottom:8px}}
+    .public-nav{height:76px;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(18px,6vw,88px);background:#fff;border-bottom:1px solid #e8eeeb}
+    .public-brand{font-size:1.25rem;font-weight:800;color:#102d29;text-decoration:none}
+    .public-main{padding:0;max-width:none}
+    .hero{background:linear-gradient(125deg,#102d29 0%,#176b55 65%,#25856b 100%);color:white;padding:clamp(54px,8vw,112px) clamp(20px,9vw,130px)}
+    .hero h1{font-size:clamp(2.5rem,5vw,4.6rem);line-height:1.05;font-weight:850;letter-spacing:-2px;max-width:800px}
+    .hero p{font-size:1.12rem;max-width:650px;color:#d6e9e2;line-height:1.8}
+    .feature-card{background:#fff;border:1px solid #e8eeeb;border-radius:18px;padding:26px;height:100%}
+    @media(max-width:850px){.sidebar{position:static;width:auto;min-height:0;padding:14px}.sidebar .nav{display:flex;overflow:auto;white-space:nowrap}.main{margin:0;padding:18px}.brand{margin-bottom:8px}.public-nav{height:auto;min-height:68px;padding:12px 16px;gap:10px}.public-nav .btn-link{display:none}.public-brand{font-size:1.05rem}.public-nav .btn{font-size:.85rem;padding:8px 10px}.hero{padding:56px 22px}.hero h1{letter-spacing:-1px}}
   </style>
 </head>
 <body>
@@ -45,7 +52,17 @@
   </div>
 </aside>
 {% endif %}
-<main class="{% if current_user.is_authenticated %}main{% else %}container py-5{% endif %}">
+{% if not current_user.is_authenticated %}
+<nav class="public-nav">
+  <a class="public-brand" href="{{ url_for('index') }}"><i class="bi bi-book-half me-2"></i>Smart Library</a>
+  <div class="d-flex align-items-center gap-2">
+    <a class="btn btn-link text-decoration-none text-dark" href="{{ url_for('catalog') }}">Explore catalogue</a>
+    <a class="btn btn-outline-success" href="{{ url_for('login') }}">Sign in</a>
+    <a class="btn btn-brand" href="{{ url_for('register') }}">Get started</a>
+  </div>
+</nav>
+{% endif %}
+<main class="{% if current_user.is_authenticated %}main{% else %}public-main{% endif %}">
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% for category,message in messages %}<div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">{{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>{% endfor %}
   {% endwith %}
